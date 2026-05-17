@@ -305,6 +305,18 @@ that route finance-segment interest through revenue and never tag
   into a trailing-twelve-months statement for issuers whose fiscal year
   ends off-calendar (e.g. CarMax FY ends Feb 28, America's Car-Mart FY
   ends April 30).
+- `edgar/metrics/_statement_taxonomy.py` defines a frozen, closed-set
+  slot taxonomy for the Balance Sheet (29 slots) and Cash Flow Statement
+  (23 slots), plus generic / bank / insurance / reit overlays that
+  re-interpret input slots **without re-partitioning the accounting
+  identity** (`Assets ≡ Liabilities + Equity`,
+  `CFO + CFI + CFF + FX ≡ ΔCash`). `_bs_prefilter.py` / `_cf_prefilter.py`
+  deterministically classify each us-gaap BS/CF tag against that closed
+  set with a name-polarity guardrail. This is a structural foundation
+  layer; it is not yet consumed by a runtime buildup metric, so existing
+  `derived_lines` outputs are unaffected. (The resolved tag→slot map
+  itself is produced by an offline regeneration pipeline kept out of
+  this public tree.)
 - `edgar/_extension_mappings.py` declares dealer-specific extension
   concepts (floor-plan notes payable, non-recourse auto-finance notes,
   loaner-vehicle notes) that the Company Facts API does not expose by
@@ -365,7 +377,10 @@ edgar-connect/
 │       ├── returns.py          # roa, roe, roic, turnover
 │       ├── working_capital.py  # dso, dio, dpo, ccc
 │       ├── growth.py           # auto-registers <base>_growth + _cagr_{3,5,7}y
-│       └── ltm.py              # trailing-twelve-months rollup
+│       ├── ltm.py              # trailing-twelve-months rollup
+│       ├── _statement_taxonomy.py # Frozen BS/CF slot taxonomy + industry overlays
+│       ├── _bs_prefilter.py    # Deterministic BS tag->slot prefilter + guardrail
+│       └── _cf_prefilter.py    # Deterministic CF tag->slot prefilter + guardrail
 │
 ├── config/
 │   ├── settings.py             # Configuration settings
