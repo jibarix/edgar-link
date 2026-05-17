@@ -1,0 +1,28 @@
+venv/
+.venv/
+cache/
+logs/
+output/
+__pycache__/
+*.pyc
+*.egg-info/
+report.json
+.claude/
+data/sec_datasets/*.zip
+data/sec_datasets/*/
+
+# Local reference / working data — only the two normalized JSON
+# indexes under data/ ship; every other artifact under data/ is
+# local-only and never published.
+data/*.xlsx
+data/*.xls
+data/*.zip
+data/*.csv
+data/*.txt
+data/*.tex
+data/*.pdf
+data/*.html
+data/*_files/
+data/_*_extract/
+data/*_comps.json
+data/*_provenance.json

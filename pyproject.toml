@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edgar-connect"
+version = "0.1.0"
+description = "Analyst-grade SEC EDGAR financials: XBRL pull plus a vendor-comparable normalized metric/comps/beta engine, with an MCP server"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = [
+    # Pinned to releases uploaded BEFORE 2026-05-11 (Mini Shai-Hulud disclosure).
+    # Verified against PyPI release history. Do not bump without re-verifying
+    # the version's upload date is outside the incident window.
+    "httpx==0.28.1",         # 2024-12-06
+    "pandas==3.0.2",         # 2026-03-31  (3.0.3 was uploaded on incident day)
+    "XlsxWriter==3.2.9",     # 2024-12-19
+    "tabulate==0.9.0",       # 2022-10-06  (conservative; 0.10.0 broke a 4-yr dormancy)
+    "openpyxl==3.1.5",       # 2024-06-28
+    "beautifulsoup4==4.14.3",# 2025-11-30
+    "lxml==6.1.0",           # 2026-04-17
+    "jsonschema==4.26.0",    # 2024-12-19
+    "flask==3.1.3",          # 2026-02-19
+    # --- explicit transitive pins (override pip auto-resolution) ---
+    "idna==3.11",            # 2025-10-12  (httpx transitive; 3.14/3.15 fell inside disclosure window)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+mcp = [
+    "mcp==1.27.1",                # 2026-05-08  (last release before Mini Shai-Hulud disclosure)
+    # --- explicit transitive pins (pip auto-resolution picked in-window versions) ---
+    "sse-starlette==3.4.2",       # 2026-05-06  (3.4.4 was uploaded on incident day 2026-05-12)
+    "python-multipart==0.0.27",   # 2026-04-27  (0.0.28 dropped 1 day pre-disclosure)
+]
+
+[project.scripts]
+edgar-search = "main:main"
+edgar-mcp = "edgar_mcp.__main__:mcp.run"
+
+[tool.setuptools]
+py-modules = ["main", "web_app"]
+
+[tool.setuptools.packages.find]
+include = ["edgar*", "edgar_mcp*", "config*", "utils*"]
