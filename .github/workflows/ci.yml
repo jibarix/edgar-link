@@ -1,0 +1,76 @@
+name: CI
+
+# Hardened CI:
+#   - No pull_request_target (no secret exposure to fork PRs).
+#   - Least-privilege token: read-only contents, nothing else.
+#   - Third-party actions pinned to full commit SHAs, not tags.
+#   - No fresh dependency resolve: install is hash-verified from the
+#     committed requirements.lock (Windows/cp311-specific), plus a small
+#     set of exact, supply-chain-audited dev pins with --no-deps. This
+#     keeps CI inside the Mini Shai-Hulud incident policy (no unpinned
+#     npm/PyPI fetches, no ad-hoc upgrades).
+#   - No live SEC calls: EDGAR_IDENTITY is intentionally never set here,
+#     so retrieval/smoke paths cannot run. Only offline tests + an
+#     offline MCP import boot run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Offline tests + MCP boot (Windows / Python 3.11)
+    # windows-latest matches the committed requirements.lock, which was
+    # generated on Windows/CPython 3.11 and pins pywin32 + cp311 wheel
+    # hashes. A Linux runner would force a fresh cross-platform resolve,
+    # which is blocked during the active supply-chain incident.
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        # actions/checkout v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python 3.11
+        # actions/setup-python v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime + MCP deps (hash-verified, no resolve)
+        run: >-
+          python -m pip install --disable-pip-version-check
+          --require-hashes -r requirements.lock
+
+      - name: Install audited dev tooling (exact pins, no deps)
+        # Not in the hash lock by design. Each version verified uploaded
+        # before the 2026-04-29 Mini Shai-Hulud phase-1 staging wave.
+        # --no-deps prevents pip from pulling fresh transitives.
+        run: >-
+          python -m pip install --disable-pip-version-check --no-deps
+          pytest==8.4.2
+          packaging==25.0
+          pluggy==1.6.0
+          iniconfig==2.3.0
+          Pygments==2.20.0
+
+      - name: Install project (editable, no build isolation, no deps)
+        run: >-
+          python -m pip install --disable-pip-version-check
+          -e . --no-build-isolation --no-deps
+
+      - name: Run offline test suite
+        run: python -m pytest -q
+
+      - name: Offline MCP server import boot
+        # Boots the FastMCP app and registers all tools without any SEC
+        # call (FilingRetrieval.__init__ does no network I/O, and
+        # EDGAR_IDENTITY is deliberately unset in CI).
+        run: >-
+          python -c "import edgar_mcp.server as s; assert s.mcp is not None; print('MCP server import OK')"

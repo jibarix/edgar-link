@@ -6,7 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "edgar-connect"
 version = "0.1.0"
 description = "Analyst-grade SEC EDGAR financials: XBRL pull plus a vendor-comparable normalized metric/comps/beta engine, with an MCP server"
-requires-python = ">=3.9"
+# Source floor: the code uses no 3.11-only constructs. The pinned
+# dependency set and the hash-verified clean-room/CI path are currently
+# validated on Windows / CPython 3.11 (see requirements.lock and
+# .github/workflows/ci.yml); a lower interpreter is source-compatible
+# but not lock-verified during the active supply-chain incident.
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 dependencies = [
     # Pinned to releases uploaded BEFORE 2026-05-11 (Mini Shai-Hulud disclosure).

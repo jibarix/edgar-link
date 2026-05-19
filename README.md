@@ -53,8 +53,14 @@ More information: https://www.sec.gov/developer
 
 ### Requirements
 
-- Python 3.9+
+- Python 3.10+
 - `pip`
+
+> The hash-verified clean-room install and CI path are currently
+> validated on Windows / CPython 3.11 (`requirements.lock` is
+> Windows/cp311-specific). The source itself is 3.10+; a Linux or
+> lower-interpreter lock is deferred until a fresh dependency resolve
+> is safe under the active supply-chain incident policy.
 
 ### Install from GitHub
 
