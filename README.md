@@ -91,6 +91,23 @@ reviewed versions. `requirements.lock` is the corresponding hash-pinned lockfile
 
 ## Usage
 
+Three ways to drive the engine. They share the same Python core; pick
+the one that fits the workflow.
+
+### Talk to Claude (MCP)
+
+The conversational path. The same engine is exposed as an MCP stdio
+server, so an MCP-aware client (Claude Code, Claude Desktop) can call
+it directly in natural language:
+
+- *"Show Apple's last 3 fiscal years of revenue, EBIT, and FCF."*
+- *"Compute ROIC for ticker MSFT, last 5 quarters."*
+- *"Find software filers (SIC 7372) with U.S. revenue dominance."*
+
+Install and register the server once — see
+[MCP server reference](#mcp-server-reference) below — then just ask.
+No code from the caller.
+
 ### CLI
 
 Interactive mode:
@@ -114,10 +131,41 @@ Supported statement types:
 - `CI` - Comprehensive Income
 - `ALL` - All supported statements
 
-## MCP server
+### Library (Python import)
 
-The same engine is also exposed as an MCP stdio server so clients such as
-Claude Code can call it directly.
+For building analyses on top of the engine in your own code:
+
+```python
+from edgar.filing_retrieval import FilingRetrieval
+from edgar.xbrl_parser import XBRLParser
+from edgar.metrics import REGISTRY, NormalizedStatement, compute, list_slugs
+
+filings = FilingRetrieval()
+parser  = XBRLParser()
+
+facts = filings.get_company_facts("0000320193")   # Apple Inc.
+normalized = parser.parse_company_facts(
+    facts,
+    statement_type="IS",
+    period_type="annual",
+    num_periods=3,
+)
+ns = NormalizedStatement(normalized)
+
+ebit_series   = compute("ebit", ns)               # {period: value}
+margin_slugs  = list_slugs(category="margins")    # discover what's registered
+spec          = REGISTRY["roic"]                  # MetricSpec (fn, unit, ...)
+```
+
+`EDGAR_IDENTITY` must be set in the environment for any live retrieval.
+See [Architecture](#architecture) for module boundaries and
+[MCP server reference](#mcp-server-reference) for the equivalent tool
+surface.
+
+## MCP server reference
+
+Install, registration, configuration, and the tool surface for the
+stdio server invoked via `python -m edgar_mcp`.
 
 ### Install MCP extra
 
