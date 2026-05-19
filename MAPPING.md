@@ -264,6 +264,7 @@ row it actually reported, **per period**:
 |---|---|
 | `scripts/smoke_test_metrics.py` | Live AAPL smoke test of the parser + metric registry; prints a compact multi-period table of hand-checked metrics. Requires `EDGAR_IDENTITY`. The fastest way to verify the mapping end to end. |
 | `scripts/gen_lockfile.py` | Regenerates `requirements.lock` (exact versions + sha256) from a `pip --dry-run --report` output. Not part of the mapping itself; listed for completeness. |
+| `scripts/update_sec_tag_mapping.py` | Maintenance tool for the Layer-1 backing data `data/sec_tag_mapping.json`. Forward-only integrity baseline via a sha256 manifest at `data/sec_tag_mapping.source.json`; additive merge of new us-gaap tags from a fresh FSDS quarter. New tags are auto-classified only when per-statement rules fire confidently (high precision, low recall); ambiguous tags are held in a review report for hand-adjudication. Existing classifications are preserved. |
 
 ### Scripts that live in the archive tree (not shipped here)
 
@@ -292,6 +293,13 @@ public tree. The committed `_bs_slot_map.py` / `_cf_slot_map.py` are the
 - **BS/CF slot coverage gap** → fix the prefilter or the adjudicated
   fan-out in the archive, then regenerate the slot maps with
   `python scripts/gen_slot_map.py`.
+- **New SEC FSDS quarter introduces new us-gaap tags** → run
+  `python scripts/update_sec_tag_mapping.py update <quarter>` for a
+  diff-only dry run, then `--apply` once the additions look right. The
+  tool refuses to operate on a hand-edited mapping file (integrity
+  check), preserves existing classifications, only auto-classifies new
+  tags when the per-statement rules fire confidently, and writes the
+  rest to a `needs_review` report for hand-adjudication.
 
 Guiding principle (from `CLAUDE.md`): prefer targeted, lowest-priority
 concept-resolution fixes over broad global mapping reorderings.

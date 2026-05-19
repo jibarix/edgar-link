@@ -315,12 +315,22 @@ maintenance:
 |--------|---------|
 | `scripts/smoke_test_metrics.py` | Live AAPL smoke test for the parser + metric registry. Prints a compact multi-period table of hand-checked metrics. Requires `EDGAR_IDENTITY`. |
 | `scripts/gen_lockfile.py` | Regenerates `requirements.lock` from `pip --dry-run --report ...` output using exact versions and `sha256` hashes. |
+| `scripts/update_sec_tag_mapping.py` | Maintenance tool for `data/sec_tag_mapping.json`. Forward-only integrity check via a sha256 manifest, plus an additive merge of new us-gaap tags from a fresh SEC Financial Statement Data Set quarter. |
 
 Lockfile regeneration flow:
 
 ```bash
 pip install --dry-run --report report.json --ignore-installed -e .
 python scripts/gen_lockfile.py report.json requirements.lock
+```
+
+Tag-mapping update flow (after a new FSDS quarter is published):
+
+```bash
+python scripts/update_sec_tag_mapping.py init                   # one-time, baselines the current file
+python scripts/update_sec_tag_mapping.py check                  # verify nobody hand-edited the mapping
+python scripts/update_sec_tag_mapping.py update 2026q1          # dry-run: diff + review report
+python scripts/update_sec_tag_mapping.py update 2026q1 --apply  # merge new tags; needs_review held back
 ```
 
 ## Project structure
@@ -334,7 +344,8 @@ edgar-connect/
 |-- LICENSE
 |-- scripts/
 |   |-- smoke_test_metrics.py
-|   `-- gen_lockfile.py
+|   |-- gen_lockfile.py
+|   `-- update_sec_tag_mapping.py
 |-- edgar_mcp/
 |   |-- __main__.py
 |   `-- server.py

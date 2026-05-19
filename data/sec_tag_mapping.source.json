@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "current_sha256": "f3cfa449f613ee34239b896551aa2c79d08e0229d3586adb2c77af9d3ee2b4b8",
+  "last_quarter": null,
+  "fsds_url": null,
+  "fsds_sha256": null,
+  "categories_allowed": [
+    [
+      "BS",
+      "Assets"
+    ],
+    [
+      "BS",
+      "Liabilities"
+    ],
+    [
+      "BS",
+      "Equity"
+    ],
+    [
+      "IS",
+      "Revenue"
+    ],
+    [
+      "IS",
+      "Income"
+    ],
+    [
+      "IS",
+      "EPS"
+    ],
+    [
+      "CF",
+      "OperatingCashFlow"
+    ],
+    [
+      "CF",
+      "InvestingCashFlow"
+    ],
+    [
+      "CF",
+      "FinancingCashFlow"
+    ]
+  ],
+  "updated_at": "2026-05-19T22:19:10Z",
+  "notes": "Forward-only integrity baseline. The current sec_tag_mapping.json predates this update system; its contents are accepted as historical ground truth. From this manifest forward, any change must come from running 'update --apply'; 'check' detects hand-edits.",
+  "history": []
+}
