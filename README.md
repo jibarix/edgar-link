@@ -94,6 +94,15 @@ reviewed versions. `requirements.lock` is the corresponding hash-pinned lockfile
 Three ways to drive the engine. They share the same Python core; pick
 the one that fits the workflow.
 
+|  | Talk to Claude (MCP) | CLI | Library |
+|---|---|---|---|
+| **Best for** | Ad-hoc questions, exploration, no coding | One-shot pulls, scripted or scheduled exports | Building analyses, pipelines, custom code |
+| **Invocation** | Natural-language prompt to an MCP client | `python main.py ...` | `from edgar.metrics import ...` |
+| **Setup** | Install `[mcp]` extra, register the server once | Install the runtime | Install the runtime |
+| **Output** | Conversational response in the client | Console table or Excel / CSV / JSON / HTML file | Python objects (dicts, DataFrames) |
+| **Lookup by** | Name, ticker, or CIK | Name, ticker, or `--cik` | CIK (resolve names via `edgar.company_lookup`) |
+| **`EDGAR_IDENTITY`** | In the MCP client's env config | In your shell env | In your shell env |
+
 ### Talk to Claude (MCP)
 
 The conversational path. The same engine is exposed as an MCP stdio
