@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import threading
 
@@ -387,6 +388,95 @@ class FilingRetrieval:
         except httpx.HTTPError as e:
             logger.warning(f"Failed to download instance {instance_url}: {e}")
             return None
+
+    def get_filing_statement_rfiles(self, cik, accession_number):
+        """Fetch SEC's rendered statement R-files for a filing.
+
+        Modern inline-XBRL filings ship no standalone ``_cal.xml`` /
+        ``_pre.xml`` linkbase, but SEC always renders the calculation +
+        presentation linkbases into the ``R*.htm`` financial-report
+        files keyed by ``FilingSummary.xml``. Those R-files carry the
+        company's OWN statement tree: which concepts are leaf input
+        lines vs declared subtotals/totals, with nesting. The Layer-2
+        structure-driven buildup consumes that tree so it never has to
+        guess leaf-vs-subtotal from the flat Company Facts feed.
+
+        Args:
+            cik: Company CIK (zero-padded or not).
+            accession_number: SEC accession number, with or without dashes.
+
+        Returns:
+            dict[str, str]: ``{'BS': html, 'CF': html, 'IS': html}`` for
+            whichever primary statements were located. Empty dict on
+            error / no rendered reports (older pre-iXBRL filings).
+        """
+        if not is_valid_cik(cik):
+            logger.error(ERROR_MESSAGES["INVALID_CIK"])
+            return {}
+
+        cik_int = int(str(cik).lstrip("0") or "0")
+        acc_nodash = str(accession_number).replace("-", "")
+        cache_key = f"stmt_rfiles_{cik_int}_{acc_nodash}"
+
+        cached = instance_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        base = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}"
+
+        def _get(url):
+            self._respect_rate_limit()
+            r = retry_request(
+                httpx.get, url, headers=HTTP_HEADERS,
+                timeout=API_REQUEST_TIMEOUT,
+                max_retries=API_RETRY_COUNT, retry_delay=API_RETRY_DELAY,
+            )
+            r.raise_for_status()
+            return r
+
+        try:
+            summary = _get(f"{base}/FilingSummary.xml").text
+        except httpx.HTTPError as e:
+            logger.warning(
+                f"No FilingSummary for {accession_number}: {e}")
+            return {}
+
+        # Match each <Report> to a primary statement by its LongName.
+        # Skip parentheticals / note-level detail reports.
+        want = {
+            "BS": ("BALANCE SHEET", "FINANCIAL POSITION"),
+            "CF": ("CASH FLOW",),
+            "IS": ("INCOME", "OPERATIONS", "EARNINGS"),
+        }
+        picked: dict[str, str] = {}
+        for m in re.finditer(r"<Report\b.*?</Report>", summary, re.S):
+            blk = m.group(0)
+            lm = re.search(r"<LongName>(.*?)</LongName>", blk, re.S)
+            hm = re.search(r"<HtmlFileName>(.*?)</HtmlFileName>", blk, re.S)
+            if not (lm and hm):
+                continue
+            long = lm.group(1).upper()
+            if any(b in long for b in ("PARENTHETICAL", "(DETAIL",
+                                       "(TABLE", "(POLIC")):
+                continue
+            for key, needles in want.items():
+                if key in picked:
+                    continue
+                if any(n in long for n in needles):
+                    picked[key] = hm.group(1).strip()
+
+        out: dict[str, str] = {}
+        for key, fname in picked.items():
+            try:
+                out[key] = _get(f"{base}/{fname}").text
+            except httpx.HTTPError as e:
+                logger.warning(
+                    f"Failed R-file {fname} ({key}) for "
+                    f"{accession_number}: {e}")
+
+        if out:
+            instance_cache.set(cache_key, out)
+        return out
 
     def get_company_concept(self, cik, taxonomy, concept):
         """
