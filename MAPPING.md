@@ -274,7 +274,7 @@ public tree. The committed `_bs_slot_map.py` / `_cf_slot_map.py` are the
 | Script (archive) | Purpose |
 |---|---|
 | `scripts/gen_slot_map.py` | Compiles the adjudicated fan-out JSON into `_bs_slot_map.py` / `_cf_slot_map.py`. Run this to regenerate the slot maps after the fan-out changes. |
-| reconcile / sweep scripts | Validation harnesses that score the engine against a vendor oracle (CapIQ screening reports). Test scaffolding, not part of the runtime mapping. |
+| reconcile / sweep scripts | Validation harnesses that score the engine against an external reference dataset. Test scaffolding, not part of the runtime mapping. |
 
 ---
 
