@@ -2,11 +2,11 @@
 
 ## Reporting a Vulnerability
 
-If you believe you've found a security vulnerability in `edgar-connect`,
+If you believe you've found a security vulnerability in `edgar-link`,
 please report it privately using **GitHub's Private Vulnerability
 Reporting** for this repository:
 
-→ https://github.com/jibarix/edgar-connect/security/advisories/new
+→ https://github.com/jibarix/edgar-link/security/advisories/new
 
 Do **not** open a public issue, PR, or discussion for security reports.
 A public report can give an attacker the same information you have

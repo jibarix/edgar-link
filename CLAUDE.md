@@ -1,10 +1,10 @@
 See @README.md for the product overview and @pyproject.toml for package metadata and dependency pins.
 
-# edgar-connect
+# edgar-link
 
 ## What This Repo Is
 
-- `edgar-connect` is an analyst-grade SEC EDGAR financial engine, not just a filing scraper.
+- `edgar-link` is an analyst-grade SEC EDGAR financial engine, not just a filing scraper.
 - The core value is converting raw SEC XBRL / Company Facts data into normalized, vendor-comparable financial outputs.
 - Favor changes that preserve metric comparability and stable downstream outputs over changes that only increase raw data surface area.
 

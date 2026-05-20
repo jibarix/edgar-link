@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "edgar-connect"
+name = "edgar-link"
 version = "0.1.2"
 description = "Analyst-grade SEC EDGAR financials: XBRL pull plus a vendor-comparable normalized metric/comps/beta engine, with an MCP server"
 # Floor matches the pinned dependency reality: pandas==3.0.2 and
@@ -12,6 +12,18 @@ description = "Analyst-grade SEC EDGAR financials: XBRL pull plus a vendor-compa
 # audited 3.10-compatible dependency set + CI validation first.
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
+keywords = ["sec", "edgar", "xbrl", "financials", "valuation", "comps", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     # Pinned to releases uploaded BEFORE 2026-05-11 (Mini Shai-Hulud disclosure).
     # Verified against PyPI release history. Do not bump without re-verifying
@@ -57,6 +69,12 @@ mcp = [
     "uvicorn==0.46.0",            # 2026-04-23  (mcp transitive; 0.47.0 dropped 2026-05-14, in-window)
     "click==8.3.3",               # 2026-04-22  (uvicorn transitive; 8.4.0 dropped 2026-05-17, in-window)
 ]
+
+[project.urls]
+Homepage = "https://github.com/jibarix/edgar-link"
+Repository = "https://github.com/jibarix/edgar-link"
+Releases = "https://github.com/jibarix/edgar-link/releases"
+Issues = "https://github.com/jibarix/edgar-link/issues"
 
 [project.scripts]
 edgar-search = "main:main"

@@ -1,6 +1,6 @@
 # Contributing
 
-`edgar-connect` is a personal public project.
+`edgar-link` is a personal public project.
 
 **Contribution policy:** No direct collaborator access; all external
 contributions must come through pull requests from forks. There are no
@@ -14,7 +14,7 @@ the owner's discretion.
 3. Make focused, single-purpose changes. Keep the diff minimal and
    self-contained — large refactors or speculative abstractions are
    unlikely to land.
-4. Open a pull request against `jibarix/edgar-connect:main`.
+4. Open a pull request against `jibarix/edgar-link:main`.
 
 ## What to expect on a PR
 

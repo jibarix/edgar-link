@@ -1,6 +1,6 @@
 # The Mapping Process
 
-How `edgar-connect` turns raw SEC filing tags into clean, comparable
+How `edgar-link` turns raw SEC filing tags into clean, comparable
 financials. This is the single most important concept in the engine, so
 this document explains it from the simple mental model down to the exact
 code.

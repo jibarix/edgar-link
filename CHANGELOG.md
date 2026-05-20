@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed the project and PyPI distribution from `edgar-connect` to
+  `edgar-link`.** The GitHub repository was renamed
+  `jibarix/edgar-connect` → `jibarix/edgar-link` (GitHub provides an
+  automatic redirect from the old URL, so existing `git clone` /
+  `git remote` references keep resolving). The `name` field in
+  `pyproject.toml`, the `[project.urls]` block, README install snippets,
+  CONTRIBUTING / SECURITY repo references, the MCP / SEC `User-Agent`
+  fallback in `config/constants.py`, the About-sheet caption in
+  `scripts/build_comps.py`, and the docstring in
+  `edgar/metrics/_statement_taxonomy.py` were all updated. The Python
+  **import** package stays `edgar` (and the MCP module stays
+  `edgar_mcp`) — only the distribution name and repo URL change, so
+  existing user code (`from edgar.metrics import ...`,
+  `python -m edgar_mcp`) does not break. Historical CHANGELOG entries
+  for `[0.1.2]` and earlier are intentionally left referencing
+  `edgar-connect` since that's the name the project shipped under at
+  those releases. The reason for the rename: the distribution name
+  `edgar-connect` was already in use on PyPI by an unrelated package,
+  blocking publication; `edgar-link` was chosen because it preserves
+  the "connection to EDGAR" framing while clearing the namespace.
+
 ## [0.1.2] - 2026-05-20
 
 Bug fixes, project hardening, and maintenance/security updates. No

@@ -101,7 +101,7 @@ XBRL_TAGS = {
 EDGAR_IDENTITY = (
     os.environ.get("EDGAR_IDENTITY")
     or os.environ.get("SEC_EDGAR_USER_AGENT")
-    or 'edgar-connect (UNCONFIGURED - set EDGAR_IDENTITY="Your Name your@email.com")'
+    or 'edgar-link (UNCONFIGURED - set EDGAR_IDENTITY="Your Name your@email.com")'
 )
 
 HTTP_HEADERS = {

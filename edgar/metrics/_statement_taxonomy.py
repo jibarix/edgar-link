@@ -18,7 +18,7 @@ vendor's adjustment-granular metric list:
 
 This module is the BS/CF analog of the (offline, archived) income-
 statement taxonomy. It is intentionally self-contained and
-vendor-neutral so it can ship in the public ``edgar-connect`` tree.
+vendor-neutral so it can ship in the public ``edgar-link`` tree.
 
 ``balance`` is the expected us-gaap balance polarity for tags in the
 slot and is the basis of the deterministic merge guardrail: a tag

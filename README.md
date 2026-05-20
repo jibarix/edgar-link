@@ -1,10 +1,10 @@
-# edgar-connect
+# edgar-link
 
 Analyst-grade SEC EDGAR financials. A Python library, CLI, and MCP
 server that pulls XBRL filings directly from the SEC and layers an
 analyst-normalized metric engine on top.
 
-Unlike raw filing tools, `edgar-connect` aims to return usable financial
+Unlike raw filing tools, `edgar-link` aims to return usable financial
 outputs such as normalized revenue, EBIT, EBITDA, FCF, leverage, margins,
 returns, growth, LTM rollups, and structural balance-sheet / cash-flow
 buildups. It also includes 5-year peer beta / R^2 utilities. No API key, no
@@ -70,17 +70,17 @@ No PyPI release yet.
 
 ```bash
 # library + metric engine
-pip install "git+https://github.com/jibarix/edgar-connect.git#egg=edgar-connect"
+pip install "git+https://github.com/jibarix/edgar-link.git#egg=edgar-link"
 
 # with MCP support
-pip install "edgar-connect[mcp] @ git+https://github.com/jibarix/edgar-connect.git"
+pip install "edgar-link[mcp] @ git+https://github.com/jibarix/edgar-link.git"
 ```
 
 ### Development install
 
 ```bash
-git clone https://github.com/jibarix/edgar-connect.git
-cd edgar-connect
+git clone https://github.com/jibarix/edgar-link.git
+cd edgar-link
 python -m venv venv
 venv\Scripts\activate          # Windows
 # source venv/bin/activate     # macOS/Linux
@@ -382,7 +382,7 @@ and which columns are blank by design.
 ## Project structure
 
 ```text
-edgar-connect/
+edgar-link/
 |-- main.py
 |-- pyproject.toml
 |-- requirements.lock

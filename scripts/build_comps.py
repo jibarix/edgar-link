@@ -930,7 +930,7 @@ def _write_about(
          "(EDGAR has no price feed). Left blank rather than approximated."),
         ("", ""),
         ("Data source",
-         "100% SEC EDGAR XBRL via the edgar-connect engine."),
+         "100% SEC EDGAR XBRL via the edgar-link engine."),
         ("Generated", date.today().isoformat()),
     ]
     for k, v in notes:
