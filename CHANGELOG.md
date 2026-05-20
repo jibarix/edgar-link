@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`scripts/build_comps.py`: point-in-time screening sheets no longer
+  look ahead.** Three related issues in the CapIQ snapshot path:
+  - `_pick_annual_period()` previously returned a period whose calendar
+    year matched `--as-of`'s year prefix, or fell back to the most
+    recent annual unconditionally. Non-Dec filers (e.g. Apple's
+    2025-09-27 FYE) could therefore be selected on an early-year
+    screen (`--as-of 2025-03-31`), producing look-ahead bias. The
+    resolver is now "latest annual period `<= as_of`, else `None`".
+  - `_capiq_snapshot()` and `_trailing_annual_revenue()` were fed the
+    primary normalized parse, which is governed by `--period-type`.
+    When the user requested `--period-type quarterly` for the
+    `Metrics` sheet, the screening helpers received a quarterly slice
+    and silently produced wrong / blank annual-only columns. The
+    snapshot path now always runs an explicit annual `parse_company_facts`
+    in addition to the primary parse, decoupling the screening sheets
+    from the matrix period type.
+  - The live-mode env-var check accepted only `EDGAR_IDENTITY`, while
+    the rest of the project (via `config/constants.py`) also accepts
+    `SEC_EDGAR_USER_AGENT` as an alias. The check is now centralized
+    in a new `_has_identity()` helper that mirrors the existing
+    resolver, so the screening script is no longer an outlier.
+
+  Verified by a new offline regression suite at
+  `tests/test_build_comps.py` (13 tests; no live SEC calls) covering
+  the as-of cutoff (including the AAPL-style "Sep FYE / Q1 screen"
+  case), Dec-filer behaviour, the all-future-annuals fallback,
+  trailing-revenue strip cutoff, the quarterly-mode decoupling, and
+  the identity alias matrix. Pytest passes 31/31; `--dry-run`
+  smoke-checked against the 25-filer SIC 5500 universe.
+
 ### Added
 
 - **Comparables workbook builder (`scripts/build_comps.py`).** A

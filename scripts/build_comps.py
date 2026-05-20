@@ -102,6 +102,22 @@ from edgar.xbrl_parser import XBRLParser  # noqa: E402
 
 logger = logging.getLogger("build_comps")
 
+
+def _has_identity() -> bool:
+    """True iff a SEC identity env var is set.
+
+    Accepts either EDGAR_IDENTITY (preferred) or SEC_EDGAR_USER_AGENT
+    (legacy alias), matching the resolver in config/constants.py so the
+    script doesn't reject identities that work everywhere else in the
+    project. Empty/whitespace-only values count as unset.
+    """
+    for name in ("EDGAR_IDENTITY", "SEC_EDGAR_USER_AGENT"):
+        v = os.environ.get(name)
+        if v and v.strip():
+            return True
+    return False
+
+
 INDEX_PATH = Path(BASE_DIR) / "data" / "company_index.json"
 
 # Lookback buffer on top of the user's requested num_periods so trailing
@@ -341,19 +357,20 @@ def _compute_metric_series(
 
 
 def _pick_annual_period(periods: list[str], as_of: str) -> str | None:
-    """Annual period whose fiscal year matches `as_of`, else the most
-    recent annual period <= as_of, else the most recent annual.
+    """Latest annual period whose end-date is <= `as_of`, else None.
+
+    Periods are expected to arrive in descending order (newest first),
+    matching XBRLParser.parse_company_facts output. A period strictly
+    after `as_of` is never selected — point-in-time snapshots can't
+    look into the future even when a same-calendar-year filing exists
+    (e.g. as_of=2025-03-31 must not pick a 2025-09-27 FYE).
     """
     if not periods:
         return None
-    yr = as_of[:4]
-    for p in periods:
-        if p[:4] == yr:
-            return p
     for p in periods:
         if p <= as_of:
             return p
-    return periods[0]
+    return None
 
 
 def _capiq_snapshot(
@@ -1061,9 +1078,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # ── live: enforce identity ──
-    if not os.environ.get("EDGAR_IDENTITY"):
+    if not _has_identity():
         print("EDGAR_IDENTITY is not set. Set it before running a live "
-              "comps build:\n"
+              "comps build (SEC_EDGAR_USER_AGENT is also accepted):\n"
               "    $env:EDGAR_IDENTITY = \"Your Name your@email.com\"  "
               "(PowerShell)\n"
               "    export EDGAR_IDENTITY=\"Your Name your@email.com\"   "
@@ -1099,16 +1116,33 @@ def main(argv: list[str] | None = None) -> int:
             continue
         peer_facts[cik_padded] = facts
 
-        # Annual parse for the matrix + drilldown sheet.
-        annual = _parse_normalized(
+        # Normalized parse for the main Metrics matrix + drilldown sheet.
+        # Honors --period-type (annual or quarterly).
+        primary = _parse_normalized(
             facts, parser, args.period_type,
             args.num_periods + LOOKBACK_BUFFER,
         )
-        peer_pulls[cik_padded] = annual or {}
+        peer_pulls[cik_padded] = primary or {}
 
         if args.capiq_layout:
-            # Quarterly parse (only useful for LTM rollup of non-Dec
-            # filers; cheap because facts are already in memory).
+            # Screening sheets are FY-aligned by construction: LTM = trailing
+            # 4 quarters for non-Dec filers, else the FY-aligned annual.
+            # Parse a TRUE annual slice explicitly so the snapshot resolver
+            # and trailing-revenue strip are unaffected by --period-type.
+            if args.period_type == "annual":
+                annual_for_snap = primary
+            else:
+                try:
+                    annual_for_snap = _parse_normalized(
+                        facts, parser, "annual",
+                        args.num_periods + LOOKBACK_BUFFER,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("annual parse for snapshot failed for "
+                                   "%s: %s", cik_padded, e)
+                    annual_for_snap = None
+            # Quarterly parse (LTM rollup for non-Dec filers; cheap because
+            # facts are already in memory).
             try:
                 qtr = parser.parse_company_facts(
                     facts, statement_type="ALL",
@@ -1119,9 +1153,6 @@ def main(argv: list[str] | None = None) -> int:
                                cik_padded, e)
                 qtr = None
             peer_quarterly[cik_padded] = qtr or {}
-            # Annual frame for the CapIQ snapshot uses a wider window so
-            # _pick_annual_period can find the right FY <= as_of.
-            annual_for_snap = annual
             if annual_for_snap and annual_for_snap.get("periods"):
                 snap = _capiq_snapshot(annual_for_snap, qtr, as_of)
                 if snap:
