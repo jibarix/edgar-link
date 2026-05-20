@@ -317,6 +317,7 @@ maintenance:
 | `scripts/gen_lockfile.py` | Regenerates `requirements.lock` from `pip --dry-run --report ...` output using exact versions and `sha256` hashes. |
 | `scripts/update_sec_tag_mapping.py` | Maintenance tool for `data/sec_tag_mapping.json`. Forward-only integrity check via a sha256 manifest, plus an additive merge of new us-gaap tags from a fresh SEC Financial Statement Data Set quarter. |
 | `scripts/update_company_index.py` | Maintenance tool for `data/company_index.json`. Forward-only integrity check via a sha256 manifest, plus a snapshot rebuild of the company classification index from one or more fresh SEC Financial Statement Data Set quarters. |
+| `scripts/build_comps.py` | Build a styled multi-peer comparables workbook from `data/company_index.json` (no anchor company required). Filters by SIC plus optional name / subindustry / country, pulls Company Facts per peer, and writes one Excel with a `Universe` sheet (classification fields), a `Metrics` matrix (peers × metric × relative fiscal period), CapIQ-mirror `Screening_24col` / `Screening_36col` snapshot sheets (LTM, point-in-time at `--as-of`), per-peer drilldown sheets (BS / IS / CF stacked), and an `About` methodology sheet. Styled header band, freeze panes, auto-filter, accounting number formats. Optional `--extensions` merges captive-finance extension XBRL; 5Y monthly β + R² vs ^GSPC is on by default (fail-soft on Yahoo errors / `<24` months of history) and disabled with `--no-beta`. Requires `EDGAR_IDENTITY` for live runs; `--dry-run` previews the peer set offline; `--no-capiq-layout` skips the Screening / submissions / quarterly path for a faster build. |
 
 Lockfile regeneration flow:
 
@@ -344,6 +345,39 @@ python scripts/update_company_index.py rebuild 2025q4 2026q1                  # 
 python scripts/update_company_index.py rebuild 2025q4 2026q1 --apply          # replace the index, rotate the manifest
 ```
 
+Comparables workbook flow (no anchor company; universe is selected by
+filtering `data/company_index.json`):
+
+```bash
+# Preview the peer set without any SEC calls (offline)
+python scripts/build_comps.py --sic 5500 \
+    --exclude-name casey murphy copart openlane camping lazydays \
+    --dry-run
+
+# Live build (writes output/comps_<label>_<period>_<YYYYMMDD>.xlsx).
+# Requires EDGAR_IDENTITY in the environment.
+python scripts/build_comps.py --sic 5500 \
+    --exclude-name casey murphy copart openlane camping lazydays \
+    --num-periods 5
+```
+
+Each row in the resulting `Universe` sheet carries the classification
+fields already present in `company_index.json` (SIC, industry,
+subindustry, country of incorporation, dominant revenue country, and
+the per-country revenue mix where the issuer tags it). The `Metrics`
+sheet is a peers × (metric, relative fiscal period) matrix; peers with
+different fiscal-year ends line up because columns are FY 0 / FY -1 /
+FY -2 ... rather than absolute dates. The CapIQ-mirror `Screening_24col`
+and `Screening_36col` sheets give a single point-in-time snapshot at
+`--as-of` (LTM = trailing 4 quarters whose period-end is ≤ as-of for
+non-Dec filers, else the FY-aligned annual); 36-col adds 6 trailing
+LTM revenue columns. Forward analyst-estimate columns (CapIQ cols
+26–29) are blank by design — EDGAR has no equivalent and they are
+never fabricated. Per-peer drilldown sheets stack the normalized BS /
+IS / CF line items with the peer's own period dates as columns. The
+`About` sheet records the filter set, the as-of date, the period basis,
+and which columns are blank by design.
+
 ## Project structure
 
 ```text
@@ -357,7 +391,8 @@ edgar-connect/
 |   |-- smoke_test_metrics.py
 |   |-- gen_lockfile.py
 |   |-- update_sec_tag_mapping.py
-|   `-- update_company_index.py
+|   |-- update_company_index.py
+|   `-- build_comps.py
 |-- edgar_mcp/
 |   |-- __main__.py
 |   `-- server.py

@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comparables workbook builder (`scripts/build_comps.py`).** A
+  styled, no-anchor comps tool: filters `data/company_index.json` by
+  SIC (`--sic`) plus optional `--name-substring` /
+  `--exclude-subindustry` / `--exclude-name` / `--country-inc` /
+  `--revenue-country` / `--limit`, then pulls Company Facts for every
+  peer and writes a single Excel workbook. Sheet layout: `Universe`
+  (one row per peer with the classification fields from
+  `company_index.json` — name, ticker, CIK, SIC, industry,
+  subindustry, country / state of incorporation, dominant revenue
+  country, geographic revenue breakdown, latest annual period),
+  `Metrics` (peers × (metric × relative fiscal period) matrix;
+  columns are FY 0 / FY -1 / FY -2 ... so peers with different fiscal
+  calendars line up), CapIQ-mirror `Screening_24col` /
+  `Screening_36col` (single point-in-time snapshot per peer at
+  `--as-of`: LTM = trailing 4 quarters ≤ as-of for non-Dec filers,
+  else the FY-aligned annual; 36-col layout adds 6 trailing LTM
+  revenue columns), one drilldown sheet per peer with BS / IS / CF
+  normalized line items stacked, and an `About` methodology sheet.
+  Header band styled bold-white on navy (`1F3864`); freeze panes,
+  auto-filter, and per-unit accounting / ratio / turnover / days
+  number formats applied across all sheets. CapIQ-layout uses the
+  same LTM resolver pattern as the archived
+  `reconcile_capiq_screening` (FY-aligned annual when the latest
+  annual matches as-of, else `build_ltm_statement` from quarterly +
+  prior annual). CapIQ forward analyst-estimate columns (cols 26–29)
+  are blank by design — EDGAR has no equivalent and they are never
+  fabricated. Metric set defaults to a 27-slug analyst-friendly
+  bundle (revenue / margin / working-capital / leverage / returns)
+  drawn from the existing registry; overridable via `--metrics`.
+  Optional `--extensions` merges captive-finance extension XBRL
+  (`EQUIPMENT_FINANCE_RULES`); 5Y monthly β + R² vs ^GSPC is on by
+  default (fail-soft: a Yahoo Finance error blanks the two β columns
+  for that peer rather than aborting the build, and the regression's
+  own `_MIN_OBS=24` cutoff blanks names with <2 years of history);
+  `--no-beta` disables the computation; `--no-capiq-layout` skips
+  the Screening / submissions / quarterly path for a faster build. Live runs require
+  `EDGAR_IDENTITY`; `--dry-run` previews the peer set offline.
+  openpyxl is the workbook writer (already in deps); no new
+  dependencies. Verified end-to-end against an 11-peer auto-dealer
+  universe (SIC 5500) — 11/11 peers pulled, Screening_36col
+  populated with hand-checked Lithia Motors (LAD) trailing revenue:
+  FY25 37,634.9 $mm, LTM-1 (FY24) 36,188.2 ✓, LTM-2 (FY23) 31,042.3 ✓,
+  LTM-3 (FY22) 28,187.8 ✓ — all matching published 10-K filings; β /
+  R² populated for 10/11 peers (CVNA 3.35, LAD 1.25, KMX 1.20, CRMT
+  1.21, RUSHA 0.90, SAH 0.91, PAG 0.88, GPI 0.85, AN 0.78, ABG 0.77;
+  VRM blank — <24 months of post-restructuring history hits the
+  `_MIN_OBS` cutoff in `compute_peer_betas`, soft-failed as designed).
+  CapIQ-style header / freeze panes / auto-filter applied; About
+  sheet documents blank-by-design columns.
+
 - **`company_index.json` update system (`scripts/update_company_index.py`).**
   Snapshot rebuild of the local company classification index from one or
   more SEC Financial Statement Data Set quarters. Forward-only integrity
