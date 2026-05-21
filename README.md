@@ -222,6 +222,26 @@ claude mcp add edgar -e EDGAR_IDENTITY="Your Name your@email.com" -- python -m e
 python -m edgar.company_classifier --build
 ```
 
+### Companion Claude Skill
+
+The MCP server gives Claude **access** to the engine; the bundled
+[`edgar-link-financials`](./skills/edgar-link-financials/) skill gives Claude
+the **workflow knowledge** to use it well. Together they mean a question like
+*"show MSFT's ROIC over 5 quarters"* resolves the ticker, computes the metric
+with the right internal lookback, and reports the result with units — without
+the user having to know tool names, that EBIT is analyst-normalized, or that
+`search_companies` needs a prebuilt index.
+
+The skill is a portable folder (`SKILL.md` + `references/`) that works in
+Claude.ai, Claude Code, and the API. To use it in Claude Code, copy the folder
+into your skills directory, or upload it in Claude.ai via **Settings →
+Capabilities → Skills**. It triggers on financial / fundamentals / filings
+questions and defers detailed metric and error guidance to its `references/`
+files (progressive disclosure), so it adds little to context until needed.
+
+`EDGAR_IDENTITY` must still be set in the MCP server's environment — the skill
+documents that precondition but cannot supply the identity itself.
+
 ## Architecture
 
 ### 1. Retrieval

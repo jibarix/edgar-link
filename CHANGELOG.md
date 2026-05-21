@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Companion Claude Skill (`skills/edgar-link-financials/`).** A portable
+  `SKILL.md` + `references/` folder that teaches Claude the workflow on top of
+  the `edgar` MCP server: the resolve → fetch → present sequence, the
+  `EDGAR_IDENTITY` and `search_companies` index preconditions, the
+  analyst-normalization caveats (EBIT/EBITDA/FCF/total_debt), and a slug catalog
+  plus troubleshooting guide loaded via progressive disclosure. Follows the
+  Anthropic skill-authoring guide (kebab-case name, trigger-rich description,
+  `references/` for detail). README gains a "Companion Claude Skill" section
+  under the MCP server reference explaining the MCP-plus-skill pairing.
+
 ### Changed
 
 - **Renamed the project and PyPI distribution from `edgar-connect` to
