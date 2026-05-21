@@ -27,6 +27,26 @@ def is_valid_cik(cik):
     return len(cik_digits) <= 10 and cik_digits.isdigit()
 
 
+# XBRL element names (us-gaap / ifrs-full / dei concepts) are NCNames that in
+# these taxonomies are alphanumeric PascalCase, e.g. "AssetsCurrent". Anchoring
+# to this set keeps a caller-supplied `concept` from being shaped into anything
+# other than a single SEC API path segment (no '/', '?', '#', '..', whitespace).
+_CONCEPT_RE = re.compile(r'^[A-Za-z][A-Za-z0-9]*$')
+
+
+def is_valid_concept(concept):
+    """
+    Validate an XBRL concept name before it is used in an SEC API URL.
+
+    Args:
+        concept (str): Concept name to validate
+
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    return isinstance(concept, str) and bool(_CONCEPT_RE.match(concept))
+
+
 def is_valid_filing_type(filing_type):
     """
     Validate if a string is a valid SEC filing type.

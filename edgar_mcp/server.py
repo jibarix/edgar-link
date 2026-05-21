@@ -10,6 +10,8 @@ Tools:
 """
 from __future__ import annotations
 
+import functools
+import logging
 from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
@@ -18,6 +20,34 @@ from edgar.company_lookup import format_cik, search_company
 from edgar.filing_retrieval import FilingRetrieval
 from edgar.xbrl_parser import XBRLParser
 from edgar import metrics as edgar_metrics
+from utils.validators import is_valid_concept
+
+# Per-invocation audit trail. Each tool call logs its name, parameters, and
+# outcome (ok / error / exception) — the forensic record an MCP server should
+# leave. Output payloads are intentionally NOT logged (they can be large and
+# may carry sensitive data); only the outcome class is. Logging is configured
+# by the host process; the server only emits records.
+logger = logging.getLogger("edgar_mcp")
+
+
+def _audit(fn):
+    """Log a tool invocation's name, arguments, and outcome at INFO."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        logger.info("tool=%s args=%r", fn.__name__, kwargs if kwargs else args)
+        try:
+            result = fn(*args, **kwargs)
+        except Exception:
+            logger.exception("tool=%s outcome=exception", fn.__name__)
+            raise
+        if isinstance(result, dict) and "error" in result:
+            logger.info("tool=%s outcome=error detail=%s",
+                        fn.__name__, result["error"])
+        else:
+            logger.info("tool=%s outcome=ok", fn.__name__)
+        return result
+    return wrapper
+
 
 mcp = FastMCP("edgar-search")
 
@@ -45,6 +75,7 @@ def _get_classifier_index() -> dict:
 
 
 @mcp.tool()
+@_audit
 def lookup_company(query: str) -> list[dict]:
     """Resolve a company name or ticker to its SEC CIK.
 
@@ -54,6 +85,7 @@ def lookup_company(query: str) -> list[dict]:
 
 
 @mcp.tool()
+@_audit
 def get_financial_statement(
     cik_or_ticker: str,
     statement_type: Literal["BS", "IS", "CF", "EQ", "CI", "ALL"] = "ALL",
@@ -92,12 +124,18 @@ def get_financial_statement(
 
 
 @mcp.tool()
+@_audit
 def get_concept(
     cik_or_ticker: str,
     concept: str,
     taxonomy: Literal["us-gaap", "ifrs-full", "dei"] = "us-gaap",
 ) -> dict:
     """Retrieve the full historical time series for a single XBRL concept."""
+    if not is_valid_concept(concept):
+        return {"error": (
+            f"Invalid concept name: {concept!r}. Use a bare XBRL element "
+            "name such as 'AssetsCurrent' or 'Revenues'."
+        )}
     cik = _resolve_cik(cik_or_ticker)
     if cik is None:
         return {"error": f"No company matched '{cik_or_ticker}'"}
@@ -108,6 +146,7 @@ def get_concept(
 
 
 @mcp.tool()
+@_audit
 def search_companies(
     sic: str | None = None,
     industry: str | None = None,
@@ -158,6 +197,7 @@ def search_companies(
 
 
 @mcp.tool()
+@_audit
 def list_metrics(category: str | None = None) -> dict:
     """List registered derived metrics.
 
@@ -169,6 +209,7 @@ def list_metrics(category: str | None = None) -> dict:
 
 
 @mcp.tool()
+@_audit
 def compute_metric(
     slug: str,
     cik_or_ticker: str,

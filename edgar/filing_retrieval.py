@@ -19,7 +19,7 @@ from config.settings import (
 )
 from utils.cache import Cache
 from utils.helpers import retry_request, parse_date
-from utils.validators import is_valid_cik, is_valid_filing_type
+from utils.validators import is_valid_cik, is_valid_concept, is_valid_filing_type
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -493,7 +493,14 @@ class FilingRetrieval:
         if not is_valid_cik(cik):
             logger.error(ERROR_MESSAGES["INVALID_CIK"])
             return None
-            
+
+        # `concept` is interpolated into the SEC API URL path below. Reject
+        # anything that is not a bare XBRL element name so it cannot inject
+        # extra path segments, query/fragment markers, or traversal.
+        if not is_valid_concept(concept):
+            logger.error(f"Invalid XBRL concept name: {concept!r}")
+            return None
+
         formatted_cik = str(cik).zfill(10)
         cache_key = f"company_concept_{formatted_cik}_{taxonomy}_{concept}"
         cached_data = filing_cache.get(cache_key)
